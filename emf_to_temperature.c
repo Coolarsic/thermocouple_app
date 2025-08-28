@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "emf_to_temperature.h"
 
 double emf_to_temperature(double emf) {
     /* Convert emf to temperature in degrees Celsius by Horner method*/

@@ -18,3 +18,4 @@ double get_thermocouple_signal_mV(xmlrpc_env* env) {
     xmlrpc_DECREF(resultP);
     return signal;
 }
+

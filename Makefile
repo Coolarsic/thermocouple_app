@@ -1,6 +1,4 @@
-# Простой Makefile для компиляции C проекта
-
-# Шаг 1: Компилируем все исходные файлы в объектные
+# Build in steps
 constants.o: constants.c constants.h
 	gcc -Wall -Wextra -std=c17 -g -c constants.c -o constants.o
 
@@ -16,17 +14,17 @@ emf_to_temperature.o: emf_to_temperature.c emf_to_temperature.h constants.h
 main.o: main.c constants.h dieIfFaultOccured.h get_thermocouple_signal_mV.h emf_to_temperature.h
 	gcc -Wall -Wextra -std=c17 -g -c main.c -o main.o
 
-# Шаг 2: Линкуем все объектные файлы в исполняемый
+# Link all objects into a executable
 install: main.o constants.o dieIfFaultOccured.o get_thermocouple_signal_mV.o emf_to_temperature.o
 	gcc -g -o thermocouple_app main.o constants.o dieIfFaultOccured.o get_thermocouple_signal_mV.o emf_to_temperature.o -lm -ldl -lxmlrpc -lxmlrpc_client -lxmlrpc_server -lxmlrpc_util 
 
-# Шаг 3: Очистка
+# Clean if needed
 clean:
 	rm -f *.o thermocouple_app
 
-# Шаг 4: Пересборка
+# Rebuild
 rebuild: clean thermocouple_app
 
-# Шаг 5: Запуск
+# Run the executable
 run: thermocouple_app
 	./thermocouple_app

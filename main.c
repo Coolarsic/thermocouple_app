@@ -119,9 +119,9 @@ int main(int const argc, const char** const argv) {
         set_current(&env, peltier_current); // Set prefered peltier current
 
         // Printing data, uncomment if needed
-        // printf("Thermocouple signal: %lf mV\n", thermocouple_voltage_mV);
-        // printf("Temperature: %lf C\n", temperature);
-        // printf("Peltier current: %lf A\n", peltier_current);
+        printf("Thermocouple signal: %lf mV\n", thermocouple_voltage_mV);
+        printf("Temperature: %lf C\n", temperature);
+        printf("Peltier current: %lf A\n", peltier_current);
         // printf("<---------------PID CONTROLLER--------------->\n");
         // printf("Proportional mismatch: %lf\n", mismatch);
         // printf("Integral mismatch: %lf\n", integral_mismatch);
