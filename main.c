@@ -2,16 +2,22 @@
 #include <stdio.h>
 #include <math.h>
 #include <unistd.h>
+#include <stdatomic.h>
+#include <pthread.h>
 #include "/usr/include/xmlrpc-c/base.h"
 #include "/usr/include/xmlrpc-c/client.h"
 #include "emf_to_temperature.h"
 #include "dieIfFaultOccured.h"
 #include "get_thermocouple_signal_mV.h"
 #include "constants.h"
-/* Choose here which server would you like to use: local or remote */
+atomic_int keep_running = 1; // For multithreading
 
-
-
+void* input_thread(void* arg) { // Thread to quit the program
+     while (keep_running) { 
+        char key = getchar(); 
+        if (key == 'q' || key == 'Q') { keep_running = 0; break; }
+    }
+}
 
 void init_xmlrpc(xmlrpc_env* env) {
     /* Initialize our error-handling environment. */
@@ -22,15 +28,14 @@ void init_xmlrpc(xmlrpc_env* env) {
     dieIfFaultOccurred(env);
 }
 
-
 void deinit_xmlrpc(xmlrpc_env* env) {
     /* Clean up our error-handling environment. */
     xmlrpc_env_clean(env);
 
     /* Shutdown our XML-RPC client library. */
+
     xmlrpc_client_cleanup();
 }
-
 
 void run_experiment(xmlrpc_env* env) {
     /*
@@ -44,9 +49,7 @@ void run_experiment(xmlrpc_env* env) {
     xmlrpc_DECREF(resultP);
 }
 
-
 void set_current(xmlrpc_env* env, double current) {
-
     xmlrpc_value* resultP;
 
     resultP = xmlrpc_client_call(env, SERVER_URI, "set_current", "(sd)", EXPERIMENT_TOKEN, current); // set current in Amperes
@@ -55,15 +58,14 @@ void set_current(xmlrpc_env* env, double current) {
 
 int main(int const argc, const char** const argv) {
     xmlrpc_env env;
-
     /* Initialize XML-RPC environment in the very beginning */
     init_xmlrpc(&env);
-
     /* (Re)Start new simulation */
     run_experiment(&env);
 
+    pthread_t input_tid;
+    pthread_create(&input_tid, NULL, input_thread, NULL);
     /* Variables for calculation */
-
     /*
     double peltier_current - variable for storage of needed peltier current, 
     double thermocouple_voltage_mV - variable for storage actual thermocouple signal
@@ -80,23 +82,21 @@ int main(int const argc, const char** const argv) {
            ↓         ↓           ↓
         Current  Accumulated  Prediction
         reaction  past errors  of future 
-             
-    So, 
+            
     double mismatch = temperature - T
     double previous_mismatch = mismatch(on previous step)
     double integral_mismatch = ∑err*dt
     double differential_mismatch = de/dt([mismatch - previous_mismatch] / DELTA_TAU)
 
     Information about PID controller:
-    https://en.wikipedia.org/wiki/PID_controller
-    */
+    https://en.wikipedia.org/wiki/PID_controller */
 
     double mismatch = 0; 
     double previous_mismatch = 0; 
     double integral_mismatch = 0; 
     double differential_mismatch = 0;
 
-    while(1){
+    while(keep_running) {
 
         thermocouple_voltage_mV = get_thermocouple_signal_mV(&env); // Read thermocouple signal
         temperature = emf_to_temperature(thermocouple_voltage_mV); // Convert mV to Celsius
@@ -115,7 +115,7 @@ int main(int const argc, const char** const argv) {
         else if (peltier_current < -MAX_CURRENT) {
             peltier_current = -MAX_CURRENT;
         }
-
+        
         set_current(&env, peltier_current); // Set prefered peltier current
 
         // Printing data, uncomment if needed
@@ -128,11 +128,9 @@ int main(int const argc, const char** const argv) {
         // printf("Differential mismatch: %lf\n", differential_mismatch);
         // printf("<=======================================================>")
         // printf("\n");
-        
-
-        sleep(DELTA_TAU); // Wait
     }
-
+    pthread_join(input_tid, NULL);
+    printf("Bye bye!\n");
     /* Clear XML-RPC environment before exiting */
     deinit_xmlrpc(&env);
     return 0;

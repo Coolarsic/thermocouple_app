@@ -1,7 +1,7 @@
 #include "constants.h"
 
 // Experiment and server
-const char* const EXPERIMENT_TOKEN = "";
+const char* const EXPERIMENT_TOKEN = "o0ypjZCbvw";
 const char* const SERVER_URI = "http://5.35.70.189:8999/RPC2";
 
 // Client and version information
